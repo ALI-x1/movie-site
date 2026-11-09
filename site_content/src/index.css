@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-night-950: #07070b;
+  --color-night-900: #0c0c14;
+  --color-night-850: #10101a;
+  --color-night-800: #14141f;
+  --color-night-700: #1d1d2b;
+
+  --color-crimson-300: #ff8a96;
+  --color-crimson-400: #ff5c6c;
+  --color-crimson-500: #ff3b4e;
+  --color-crimson-600: #e82338;
+  --color-crimson-700: #c01025;
+
+  --color-flame-300: #ffc98a;
+  --color-flame-400: #ffb25e;
+  --color-flame-500: #ff8a3d;
+  --color-flame-600: #f56f1a;
+
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-night-950);
+  color: #f4f4f6;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-crimson-500);
+  color: #fff;
+}
+
+/* ---------- scrollbars ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-night-900);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2c2c3e, #1a1a26);
+  border-radius: 999px;
+  border: 2px solid var(--color-night-900);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-crimson-600);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---------- cinematic helpers ---------- */
+.text-stroke {
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.14);
+  color: transparent;
+}
+.text-stroke-strong {
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.28);
+  color: transparent;
+}
+.text-stroke-thin {
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.35);
+  color: transparent;
+}
+
+.glow-primary {
+  box-shadow: 0 10px 40px -8px rgba(255, 59, 78, 0.55), 0 0 24px -6px rgba(255, 138, 61, 0.4);
+}
+
+/* giant outlined rank numbers (Top 10) */
+.rank-num {
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.22);
+  color: transparent;
+  transition: -webkit-text-stroke-color 0.45s ease;
+}
+.group:hover .rank-num {
+  -webkit-text-stroke-color: rgba(255, 92, 108, 0.85);
+}
+
+.grain {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.card-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.12) 48%, transparent 62%);
+  transform: translateX(120%);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+.group:hover .card-sheen::before {
+  transform: translateX(-120%);
+}
+
+/* ---------- responsive images ---------- */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---------- focus visible ---------- */
+:focus-visible {
+  outline: 2px solid var(--color-crimson-500);
+  outline-offset: 2px;
+}
