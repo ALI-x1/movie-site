@@ -1,5 +1,4 @@
 import type { Download, Movie, MovieType } from "../data/movies";
-import { LOCAL_MOVIES } from "../data/fallback";
 
 const BASE: string = (import.meta as any).env?.VITE_API_BASE ?? "";
 export const API_BASE = BASE;
@@ -57,73 +56,25 @@ export async function fetchHome(): Promise<Home> {
   }
 }
 
-/* ---------- فیل‌بک محلی (دست‌ورس بودن بدون بک‌اند) ---------- */
-
-function searchMoviesLocal(q: string): Movie[] {
-  const k = q.toLocaleLowerCase("fa");
-  return LOCAL_MOVIES.filter(
-    (m) => m.title.toLocaleLowerCase("fa").includes(k) || m.originalTitle.toLocaleLowerCase("fa").includes(k),
-  );
-}
-
-const GENRE_BY_SLUG: Record<string, string> = {
-  action: "اکشن", drama: "درام", "sci-fi": "علمی‌تخیلی", horror: "ترسناک", comedy: "کمدی",
-  mystery: "معمایی", adventure: "ماجراجویی", fantasy: "فانتزی", crime: "جنایی", documentary: "مستند",
-  animation: "انیمیشن", romance: "عاشقانه",
-};
-
-function fetchGenreLocal(slug: string): Movie[] {
-  const name = GENRE_BY_SLUG[slug];
-  if (!name) return [];
-  return LOCAL_MOVIES.filter((m) => m.genres.includes(name));
-}
-
-function fetchDetailsLocal(pid: string): Partial<Movie> {
-  const m = LOCAL_MOVIES.find((x) => x.pid === pid);
-  if (!m) throw new Error("عنوان پیدا نشد");
-  return {
-    description: m.description, rating: m.rating, genres: m.genres,
-    duration: m.duration, trailerUrl: m.trailerUrl,
-    type: m.type === "series" ? "series" : undefined, quality: m.quality,
-    downloads: m.downloads ?? [], detailed: true,
-  };
-}
-
 export async function searchMovies(q: string): Promise<Movie[]> {
-  if (!BASE) return searchMoviesLocal(q);
-  try {
-    const d = await get<{ items: ApiItem[] }>("/api/search?q=" + encodeURIComponent(q));
-    const res = d.items.map((i) => toMovie(i));
-    return res.length ? res : searchMoviesLocal(q);
-  } catch {
-    return searchMoviesLocal(q);
-  }
+  const d = await get<{ items: ApiItem[] }>("/api/search?q=" + encodeURIComponent(q));
+  return d.items.map((i) => toMovie(i));
 }
 
 export async function fetchDetails(pid: string): Promise<Partial<Movie>> {
-  if (!BASE) return fetchDetailsLocal(pid);
-  try {
-    const d = await get<any>("/api/movie?pid=" + encodeURIComponent(pid));
-    const downloads: Download[] = d.downloads ?? [];
-    const best = ["2160p", "1080p", "720p", "480p"].find((q) => downloads.some((x) => x.quality === q));
-    return {
-      description: d.plot || "", rating: Number(d.imdbRating) || undefined,
-      genres: String(d.genre || "").split(/[،,]/).map((s) => s.trim()).filter(Boolean),
-      duration: d.runtime || "", trailerUrl: d.trailerUrl || undefined,
-      type: d.hasSeasons ? "series" : undefined, quality: best?.toUpperCase() ?? "",
-      downloads, detailed: true,
-    };
-  } catch {
-    return fetchDetailsLocal(pid);
-  }
+  const d = await get<any>("/api/movie?pid=" + encodeURIComponent(pid));
+  const downloads: Download[] = d.downloads ?? [];
+  const best = ["2160p", "1080p", "720p", "480p"].find((q) => downloads.some((x) => x.quality === q));
+  return {
+    description: d.plot || "", rating: Number(d.imdbRating) || undefined,
+    genres: String(d.genre || "").split(/[،,]/).map((s) => s.trim()).filter(Boolean),
+    duration: d.runtime || "", trailerUrl: d.trailerUrl || undefined,
+    type: d.hasSeasons ? "series" : undefined, quality: best?.toUpperCase() ?? "",
+    downloads, detailed: true,
+  };
 }
 
 export async function fetchGenre(slug: string): Promise<Movie[]> {
-  if (!BASE) return fetchGenreLocal(slug);
-  try {
-    const d = await get<{ items: ApiItem[] }>("/api/category?genre=" + slug + "&type=movie&page=1");
-    return d.items.map((i) => toMovie(i, "movie"));
-  } catch {
-    return fetchGenreLocal(slug);
-  }
+  const d = await get<{ items: ApiItem[] }>("/api/category?genre=" + slug + "&type=movie&page=1");
+  return d.items.map((i) => toMovie(i, "movie"));
 }

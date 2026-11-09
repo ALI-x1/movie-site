@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { fetchHome, toMovie } from "../lib/api";
-import { LOCAL_MOVIES } from "../data/fallback";
+import { API_BASE, fetchHome, toMovie } from "../lib/api";
 import type { Movie } from "./movies";
 
 interface Catalog {
@@ -14,6 +13,13 @@ const initial: Catalog = {
 };
 const Ctx = createContext<Catalog>(initial);
 export const useCatalog = () => useContext(Ctx);
+
+const mkLog = (extra: Record<string, unknown>) =>
+  JSON.stringify(
+    { time: new Date().toISOString(), api: API_BASE || "(خالی)", page: location.href, ua: navigator.userAgent, ...extra },
+    null,
+    2,
+  );
 
 function fallbackCopy(t: string): boolean {
   const ta = document.createElement("textarea");
@@ -61,24 +67,9 @@ function DebugBanner({ message, log }: { message: string; log: string }) {
   );
 }
 
-/* ---------- کاتالوگ فیل‌بک محلی (حتی بدون سرور بک‌اند) ---------- */
-const LOCAL_CATALOG: Catalog = (() => {
-  const all = LOCAL_MOVIES;
-  return {
-    movies: all,
-    heroSlides: all.filter((x) => x.poster).slice(0, 3),
-    top10: all.slice(0, 10),
-    trending: all.slice(0, 12),
-    newReleases: all.filter((x) => x.type === "movie"),
-    seriesList: all.filter((x) => x.type === "series"),
-    loading: false, error: false, message: "", log: "",
-  };
-})();
-
 export function CatalogProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Catalog>(initial);
   useEffect(() => {
-    let live = true;
     fetchHome()
       .then((h) => {
         const m = h.movies.map((i) => toMovie(i, "movie"));
@@ -87,32 +78,26 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         const seen = new Set<number>();
         const all = [...m, ...s, ...tm, ...h.topSeries.map((i) => toMovie(i, "series"))]
           .filter((x) => !seen.has(x.id) && seen.add(x.id));
-        if (!live) return;
-        if (all.length === 0) {
-          setState(LOCAL_CATALOG);
-          return;
-        }
         setState({
           movies: all, heroSlides: m.filter((x) => x.poster).slice(0, 3),
           top10: (tm.length ? tm : m).slice(0, 10), trending: m.slice(0, 12),
           newReleases: m, seriesList: s, loading: false, error: false,
-          message: "", log: "",
+          message: all.length
+            ? ""
+            : `ووکر جواب داد ولی همه لیست‌ها خالی‌اند (فیلم ${h.movies.length}، سریال ${h.series.length}). دکمه‌ی زیر رو بزن و لاگ رو برام بفرست.`,
+          log: all.length ? "" : mkLog({ result: "empty", response: h }),
         });
       })
-      .catch(() => {
-        if (!live) return;
-        // بک‌اند در دسترس نیست → از كاتالوگ محلی استفاده می‌کنیم تا سایت بدون خطا اجرا شود
-        setState(LOCAL_CATALOG);
+      .catch((e) => {
+        const msg = String(e?.message ?? e);
+        setState((p) => ({ ...p, loading: false, error: true, message: msg.slice(0, 200), log: mkLog({ result: "error", error: msg }) }));
       });
-    return () => { live = false; };
   }, []);
   const v = useMemo(() => state, [state]);
   return (
     <Ctx.Provider value={v}>
       {children}
-      {((import.meta as any).env?.DEV && state.message) && (
-        <DebugBanner message={state.message} log={state.log} />
-      )}
+      {state.message && <DebugBanner message={state.message} log={state.log} />}
     </Ctx.Provider>
   );
 }
