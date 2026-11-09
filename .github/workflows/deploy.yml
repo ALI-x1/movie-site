@@ -2,7 +2,7 @@ name: Deploy site
 
 on:
   push:
-    branches: [main]
+    branches: [arena/be555328-movie-site]
   workflow_dispatch:
 
 permissions:
