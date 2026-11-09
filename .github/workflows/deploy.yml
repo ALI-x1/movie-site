@@ -2,7 +2,7 @@ name: Deploy site
 
 on:
   push:
-    branches: [arena/be555328-movie-site]
+    branches: [main, arena/be555328-movie-site]
   workflow_dispatch:
 
 permissions:
@@ -22,19 +22,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Unzip project
-        run: unzip -q movie-site.zip -d site
       - name: Install
         run: npm install
-        working-directory: site
+        working-directory: site_content
       - name: Build
         run: npm run build
-        working-directory: site
+        working-directory: site_content
         env:
           VITE_API_BASE: https://paerde-plus.javidnamaan.workers.dev
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site/dist
+          path: site_content/dist
 
   deploy:
     needs: build
